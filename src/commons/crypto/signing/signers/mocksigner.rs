@@ -316,14 +316,13 @@ impl MockSigner {
             .map_err(SigningError::Signer)
     }
 
-    pub fn sign_one_off<Alg: SignatureAlgorithm, D: AsRef<[u8]> + ?Sized>(
+    pub fn sign_one_off<D: AsRef<[u8]> + ?Sized>(
         &self,
-        algorithm: Alg,
         data: &D,
-    ) -> Result<(Signature<Alg>, PublicKey), SignerError> {
+    ) -> Result<(RpkiSignature, PublicKey), SignerError> {
         self.inc_fn_call_count(FnIdx::SignOneOff);
         let (public_key, pkey, _, internal_id) = self.build_key().unwrap();
-        let signature = Self::sign_with_key(algorithm, &pkey, data).unwrap();
+        let signature = Self::sign_with_key(RpkiSignatureAlgorithm::default(), &pkey, data).unwrap();
         let _ = self.keys.write().unwrap().remove(&internal_id);
         Ok((signature, public_key))
     }

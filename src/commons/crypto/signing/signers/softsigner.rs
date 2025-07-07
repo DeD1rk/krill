@@ -38,12 +38,15 @@ use crate::{
 pub struct OpenSslSignerConfig {
     #[serde(default)]
     pub keys_storage_uri: Option<Url>,
+    #[serde(default)]
+    pub use_null_scheme: bool,
 }
 
 impl OpenSslSignerConfig {
-    pub fn new(storage_uri: Url) -> Self {
+    pub fn new(storage_uri: Url, use_null_scheme: bool) -> Self {
         Self {
             keys_storage_uri: Some(storage_uri),
+            use_null_scheme,
         }
     }
 }
@@ -60,6 +63,8 @@ pub struct OpenSslSigner {
     info: Option<String>,
 
     mapper: Option<Arc<SignerMapper>>,
+
+    use_null_scheme: bool,
 }
 
 impl OpenSslSigner {
@@ -72,19 +77,22 @@ impl OpenSslSigner {
         storage_uri: &Url,
         name: &str,
         mapper: Option<Arc<SignerMapper>>,
+        use_null_scheme: bool,
     ) -> Result<Self, SignerError> {
         let keys_store = Self::init_keys_store(storage_uri)?;
 
         let s = OpenSslSigner {
             name: name.to_string(),
             info: Some(format!(
-                "OpenSSL Soft Signer [version: {}, keys store: {}]",
+                "OpenSSL Soft Signer [version: {}, keys store: {}, use null scheme: {}]",
                 openssl::version::version(),
                 storage_uri,
+                use_null_scheme
             )),
             handle: RwLock::new(None), // will be set later
             mapper,
             keys_store,
+            use_null_scheme,
         };
 
         Ok(s)
@@ -288,17 +296,24 @@ impl OpenSslSigner {
             .map_err(SigningError::Signer)
     }
 
-    pub fn sign_one_off<Alg: SignatureAlgorithm, D: AsRef<[u8]> + ?Sized>(
+    pub fn sign_one_off<D: AsRef<[u8]> + ?Sized>(
         &self,
-        algorithm: Alg,
         data: &D,
-    ) -> Result<(Signature<Alg>, PublicKey), SignerError> {
-        let kp = OpenSslKeyPair::build()?;
-        let signature =
-            Self::sign_with_key(kp.pkey.as_ref(), algorithm, data)?;
-        let key = kp.subject_public_key_info()?;
-
-        Ok((signature, key))
+    ) -> Result<(RpkiSignature, PublicKey), SignerError> {
+        if self.use_null_scheme {
+            let signature = RpkiSignature::new(
+                RpkiSignatureAlgorithm::NullSchemeSha256,
+                Bytes::from_static(b"")
+            );
+            let key = PublicKey::null_scheme(data.as_ref());
+            return Ok((signature, key))        
+        } else {
+            let kp = OpenSslKeyPair::build()?;
+            let signature =
+            Self::sign_with_key(kp.pkey.as_ref(), RpkiSignatureAlgorithm::default(), data)?;
+            let key = kp.subject_public_key_info()?;
+            return Ok((signature, key))        
+        }
     }
 }
 
@@ -389,7 +404,7 @@ pub mod tests {
     #[test]
     fn should_return_subject_public_key_info() {
         test::test_in_memory(|storage_uri| {
-            let s = OpenSslSigner::build(storage_uri, "dummy", None).unwrap();
+            let s = OpenSslSigner::build(storage_uri, "dummy", None, false).unwrap();
             let ki = s.create_key(PublicKeyFormat::Rsa).unwrap();
             s.get_key_info(&ki).unwrap();
             s.destroy_key(&ki).unwrap();
@@ -418,7 +433,7 @@ pub mod tests {
                 "../../../../../test-resources/ta/example-pkcs1.pem"
             );
             let signer =
-                OpenSslSigner::build(storage_uri, "dummy", None).unwrap();
+                OpenSslSigner::build(storage_uri, "dummy", None, false).unwrap();
 
             let ki = signer.import_key(pem).unwrap();
             signer.get_key_info(&ki).unwrap();
@@ -435,7 +450,7 @@ pub mod tests {
                 "../../../../../test-resources/ta/example-pkcs8.pem"
             );
             let signer =
-                OpenSslSigner::build(storage_uri, "dummy", None).unwrap();
+                OpenSslSigner::build(storage_uri, "dummy", None, false).unwrap();
 
             let ki = signer.import_key(pem).unwrap();
             signer.get_key_info(&ki).unwrap();

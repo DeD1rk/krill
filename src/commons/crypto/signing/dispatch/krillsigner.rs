@@ -281,7 +281,7 @@ impl KrillSigner {
         data: &D,
     ) -> CryptoResult<(RpkiSignature, PublicKey)> {
         self.router
-            .sign_one_off(RpkiSignatureAlgorithm::default(), data)
+            .sign_one_off(data)
             .map_err(crypto::Error::signer)
     }
 
@@ -476,7 +476,7 @@ fn signer_builder(
             let storage_uri =
                 conf.keys_storage_uri.as_ref().unwrap_or(storage_uri);
             let signer =
-                OpenSslSigner::build(storage_uri, name, mapper.clone())?;
+                OpenSslSigner::build(storage_uri, name, mapper.clone(), conf.use_null_scheme)?;
             Ok(SignerProvider::OpenSsl(flags, signer))
         }
         #[cfg(feature = "hsm")]

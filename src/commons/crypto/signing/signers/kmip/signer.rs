@@ -1062,11 +1062,10 @@ impl KmipSigner {
         Ok(signature)
     }
 
-    pub fn sign_one_off<Alg: SignatureAlgorithm, D: AsRef<[u8]> + ?Sized>(
+    pub fn sign_one_off<D: AsRef<[u8]> + ?Sized>(
         &self,
-        algorithm: Alg,
         data: &D,
-    ) -> Result<(Signature<Alg>, PublicKey), SignerError> {
+    ) -> Result<(RpkiSignature, PublicKey), SignerError> {
         // TODO: Is it possible to use a KMIP batch request to implement the
         // create, activate, sign, deactivate, delete
         // in one round-trip to the server?
@@ -1076,7 +1075,7 @@ impl KmipSigner {
         let signature_res = self
             .sign_with_key(
                 &kmip_key_pair_ids.private_key_id,
-                algorithm,
+                RpkiSignatureAlgorithm::default(),
                 data.as_ref(),
             )
             .map_err(|err| {

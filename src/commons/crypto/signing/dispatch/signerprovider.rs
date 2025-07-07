@@ -308,33 +308,25 @@ impl SignerProvider {
         }
     }
 
-    pub fn sign_one_off<Alg: SignatureAlgorithm, D: AsRef<[u8]> + ?Sized>(
+    pub fn sign_one_off<D: AsRef<[u8]> + ?Sized>(
         &self,
-        algorithm: Alg,
         data: &D,
-    ) -> Result<(Signature<Alg>, PublicKey), SignerError> {
-        let signing_algorithm = algorithm.signing_algorithm();
-        if !matches!(signing_algorithm, SigningAlgorithm::RsaSha256) {
-            return Err(SignerError::UnsupportedSigningAlg(
-                signing_algorithm,
-            ));
-        }
-
+    ) -> Result<(RpkiSignature, PublicKey), SignerError> {
         match self {
             SignerProvider::OpenSsl(_, signer) => {
-                signer.sign_one_off(algorithm, data)
+                signer.sign_one_off(data)
             }
             #[cfg(feature = "hsm")]
             SignerProvider::Kmip(_, signer) => {
-                signer.sign_one_off(algorithm, data)
+                signer.sign_one_off(data)
             }
             #[cfg(feature = "hsm")]
             SignerProvider::Pkcs11(_, signer) => {
-                signer.sign_one_off(algorithm, data)
+                signer.sign_one_off(data)
             }
             #[cfg(all(test, feature = "hsm"))]
             SignerProvider::Mock(_, signer) => {
-                signer.sign_one_off(algorithm, data)
+                signer.sign_one_off(data)
             }
         }
     }

@@ -134,6 +134,7 @@ fn check_openssl_keys(config: &Config) -> UpgradeResult<()> {
         &config.storage_uri,
         "test",
         None,
+        false,
     )
     .map_err(|e| {
         UpgradeError::Custom(format!("Cannot create openssl signer: {e}"))

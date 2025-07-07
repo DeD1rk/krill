@@ -254,6 +254,7 @@ impl ConfigDefaults {
     pub fn openssl_signer_only() -> Vec<SignerConfig> {
         let signer_config = OpenSslSignerConfig {
             keys_storage_uri: None,
+            use_null_scheme: false
         };
         vec![SignerConfig::new(
             DEFAULT_SIGNER_NAME.to_string(),

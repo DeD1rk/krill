@@ -1269,16 +1269,15 @@ impl Pkcs11Signer {
             .map_err(SigningError::Signer)
     }
 
-    pub fn sign_one_off<Alg: SignatureAlgorithm, D: AsRef<[u8]> + ?Sized>(
+    pub fn sign_one_off<D: AsRef<[u8]> + ?Sized>(
         &self,
-        algorithm: Alg,
         data: &D,
-    ) -> Result<(Signature<Alg>, PublicKey), SignerError> {
+    ) -> Result<(RpkiSignature, PublicKey), SignerError> {
         let (key, pub_handle, priv_handle, _) =
             self.build_key(PublicKeyFormat::Rsa)?;
 
         let signature_res = self
-            .sign_with_key(priv_handle, algorithm, data.as_ref())
+            .sign_with_key(priv_handle, RpkiSignatureAlgorithm::default(), data.as_ref())
             .map_err(|err| {
                 SignerError::Pkcs11Error(format!(
                     "One-off signing of data failed: {err}"

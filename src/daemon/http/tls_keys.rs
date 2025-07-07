@@ -13,8 +13,7 @@ use openssl::{
 use rpki::{
     ca::idcert::IdCert,
     crypto::{
-        signer::SigningAlgorithm, KeyIdentifier, PublicKey, Signature,
-        SignatureAlgorithm,
+        signer::SigningAlgorithm, KeyIdentifier, PublicKey, RpkiSignature, Signature, SignatureAlgorithm
     },
     repository::x509::{Time, Validity},
 };
@@ -104,11 +103,10 @@ impl rpki::crypto::Signer for HttpsSigner {
             .map_err(rpki::crypto::SigningError::Signer)
     }
 
-    fn sign_one_off<Alg: SignatureAlgorithm, D: AsRef<[u8]> + ?Sized>(
+    fn sign_one_off<D: AsRef<[u8]> + ?Sized>(
         &self,
-        _algorithm: Alg,
         _data: &D,
-    ) -> Result<(Signature<Alg>, PublicKey), Self::Error> {
+    ) -> Result<(RpkiSignature, PublicKey), Self::Error> {
         unimplemented!("not needed in this context")
     }
 

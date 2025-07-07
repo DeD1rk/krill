@@ -3,6 +3,7 @@ use std::{collections::HashMap, sync::RwLock};
 
 #[cfg(feature = "hsm")]
 use log::{debug, error, info, trace};
+use rpki::crypto::RpkiSignature;
 use rpki::crypto::{
     signer::KeyError, KeyIdentifier, PublicKey, PublicKeyFormat, Signature,
     SignatureAlgorithm, Signer, SigningError,
@@ -765,13 +766,12 @@ impl Signer for SignerRouter {
             .sign(key_id, algorithm, data)
     }
 
-    fn sign_one_off<Alg: SignatureAlgorithm, D: AsRef<[u8]> + ?Sized>(
+    fn sign_one_off<D: AsRef<[u8]> + ?Sized>(
         &self,
-        algorithm: Alg,
         data: &D,
-    ) -> Result<(Signature<Alg>, PublicKey), Self::Error> {
+    ) -> Result<(RpkiSignature, PublicKey), Self::Error> {
         self.bind_ready_signers();
-        self.one_off_signer.sign_one_off(algorithm, data)
+        self.one_off_signer.sign_one_off(data)
     }
 
     fn rand(&self, target: &mut [u8]) -> Result<(), Self::Error> {
