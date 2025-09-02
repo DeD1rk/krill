@@ -58,8 +58,8 @@ impl fmt::Display for SignerError {
                     SigningAlgorithm::EcdsaP256Sha256 => {
                         write!(f, "Signing with EcdsaP256 not supported")
                     }
-                    SigningAlgorithm::NullSchemeSha256 => {
-                        write!(f, "Signing with null scheme not supported")
+                    SigningAlgorithm::RpkiNullScheme => {
+                        write!(f, "Signing with Null Scheme not supported")
                     }
                 }
             }

@@ -84,7 +84,7 @@ impl OpenSslSigner {
         let s = OpenSslSigner {
             name: name.to_string(),
             info: Some(format!(
-                "OpenSSL Soft Signer [version: {}, keys store: {}, use null scheme: {}]",
+                "OpenSSL Soft Signer [version: {}, keys store: {}, use Null Scheme: {}]",
                 openssl::version::version(),
                 storage_uri,
                 use_null_scheme
@@ -302,7 +302,7 @@ impl OpenSslSigner {
     ) -> Result<(RpkiSignature, PublicKey), SignerError> {
         if self.use_null_scheme {
             let signature = RpkiSignature::new(
-                RpkiSignatureAlgorithm::NullSchemeSha256,
+                RpkiSignatureAlgorithm::RpkiNullScheme,
                 Bytes::from_static(b"")
             );
             let key = PublicKey::null_scheme(data.as_ref());
